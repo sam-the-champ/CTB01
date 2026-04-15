@@ -14,9 +14,13 @@ const app: Application = express(); // Creates an Express application instance (
 
 app.use(helmet()); // Adds security headers automatically (protects from XSS, clickjacking, etc.)
 app.use(cors({
-    origin: process.env.FRONTEND_URL, // Only allow requests from your frontend URL (security control)
+    origin: "*", // Only allow requests from your frontend URL (security control)   
     credentials: true // Allows cookies (like refresh tokens) to be sent between frontend and backend
 }));
+// origin: process.env.FRONTEND_URL,    this is what the cos origin wibe when there is a frommtend project
+app.get ("/", (req, res) => {
+    res.send("API is running...");
+});
 
 app.use(express.json()); // Allows server to read JSON data sent in request body (POST, PUT requests)
 app.use(cookieParser()); // Enables reading cookies from requests (req.cookies)
