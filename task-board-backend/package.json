@@ -8,7 +8,7 @@
     "start": "node dist/app.js"
   },
   "keywords": [],
-  "author": "",
+  "author": "Mr Sam",
   "license": "ISC",
   "description": " This is a backend project for a collaborative task board",
   "dependencies": {
@@ -26,9 +26,11 @@
   "devDependencies": {
     "@types/bcrypt": "^6.0.0",
     "@types/cookie-parser": "^1.4.10",
+    "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^25.6.0",
+    "@types/pg": "^8.20.0",
     "@types/uuid": "^10.0.0",
     "ts-node-dev": "^2.0.0",
     "typescript": "^6.0.2"
