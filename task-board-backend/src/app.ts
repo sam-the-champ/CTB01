@@ -1,3 +1,7 @@
+import dns from "dns";
+dns.setDefaultResultOrder("ipv4first");
+
+
 import express, { Application } from 'express'; // Import Express framework and its TypeScript type for the app instance
 import helmet from 'helmet'; // Security middleware that adds HTTP headers to protect against attacks
 import cors from 'cors'; // Enables Cross-Origin Resource Sharing (lets frontend talk to backend)
