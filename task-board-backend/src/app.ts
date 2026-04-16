@@ -8,6 +8,8 @@ import cors from 'cors'; // Enables Cross-Origin Resource Sharing (lets frontend
 import cookieParser from 'cookie-parser'; // Parses cookies from incoming HTTP requests (needed for refresh tokens)
 import dotenv from 'dotenv'; // Loads environment variables from a .env file into process.env
 import authRoutes from './routes/auth.routes';
+import userRoutes from './routes/user.routes';
+
 
 dotenv.config(); // Initializes dotenv so you can use process.env.PORT, process.env.FRONTEND_URL, etc.
 
@@ -30,6 +32,7 @@ app.use(express.json()); // Allows server to read JSON data sent in request body
 app.use(cookieParser()); // Enables reading cookies from requests (req.cookies)
 
 app.use('/api/auth', authRoutes);
+app.use('./api/users', userRoutes);
 
 app.use((err: any, req:express.Request, res:express.Response, next:express.NextFunction) => {
     console.error("GLOBAL ERROR STACK:", err.stack);
