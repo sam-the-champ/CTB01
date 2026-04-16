@@ -108,10 +108,21 @@ export const authenticateJWT = (req: AuthRequest, res: Response, next: NextFunct
 };
 
 export const authorizeRole = (role: 'user' | 'admin') => {
-    return (req: AuthRequest, res: Response, next: NextFunction) => {
-        if(!req.user || (req.user.role !== role && req.user.role !== 'admin')) {
-            return res.status(403).json({ error: "Forbidden: you do not have the required permissions."});
-        }
-        next();
-    };
+  // Defines a function that takes a required role ('user' or 'admin')
+  // This is a higher-order function (it returns middleware)
+
+  return (req: AuthRequest, res: Response, next: NextFunction) => {
+    // Returns middleware function that will run during a request
+
+    if (!req.user || (req.user.role !== role && req.user.role !== 'admin')) {
+
+      return res.status(403).json({
+        error: "Forbidden: You do not have the required permissions."
+      });
+     
+    }
+
+    next();
+   
+  };
 };
