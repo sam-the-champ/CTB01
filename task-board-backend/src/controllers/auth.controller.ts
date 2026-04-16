@@ -158,3 +158,90 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
     // pass it to Express error-handling middleware
   }
 };
+
+export const refresh = async (req: Request, res: Response, next: NextFunction) => {
+  // Defines the refresh controller function
+  // Handles requests to generate a new access token using a refresh token
+
+  try {
+    const oldRefreshToken = req.cookies.refreshToken;
+    /*
+    Retrieves the refresh token from cookies.
+
+    req.cookies comes from cookie-parser middleware.
+    The cookie name is 'refreshToken'.
+    */
+
+    if (!oldRefreshToken) {
+      return res.status(401).json({ error: "No refresh token provided" });
+      /*
+      If no refresh token is found:
+      - return 401 Unauthorized
+      - user is not logged in or session expired
+      */
+    }
+
+    const { newAccessToken, newRefreshToken } = await AuthService.refreshSession(oldRefreshToken);
+    /*
+    Calls the refreshSession service function.
+
+    This will:
+    - verify the refresh token
+    - check DB for validity
+    - detect token reuse (security)
+    - generate new access + refresh tokens
+    - rotate (replace) the refresh token in DB
+    */
+
+
+    // Replace the old cookie with the new one
+    res.cookie('refreshToken', newRefreshToken, {
+      /*
+      Stores the new refresh token in the cookie,
+      replacing the old one (token rotation)
+      */
+
+      httpOnly: true,
+      /*
+      Prevents JavaScript from accessing the cookie
+      Protects against XSS attacks
+      */
+
+      secure: true,
+      /*
+      Cookie only sent over HTTPS
+      Should be true in production
+      */
+
+      sameSite: 'strict',
+      /*
+      Prevents CSRF attacks
+      Only same-site requests can include this cookie
+      */
+
+      maxAge: 7 * 24 * 60 * 60 * 1000
+      /*
+      Sets cookie expiry to 7 days
+      Matches refresh token expiration
+      */
+    });
+
+    res.json({ accessToken: newAccessToken });
+    /*
+    Sends the new access token back to the client
+
+    Frontend will use this token for authenticated API requests
+    */
+
+  } catch (error: any) {
+    res.status(401).json({ error: error.message });
+    /*
+    If anything fails:
+    - invalid token
+    - expired token
+    - security breach
+
+    Return 401 Unauthorized with error message
+    */
+  }
+};

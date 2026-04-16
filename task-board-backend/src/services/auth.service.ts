@@ -15,7 +15,7 @@ import { v4 as uuidv4 } from 'uuid';
 Imports UUID generator.
 Used to create a unique "familyId" for refresh token rotation.
 */
-
+import jwt from 'jsonwebtoken';
 
 export const createUser = async (
   email: string,
@@ -184,3 +184,120 @@ export const loginUser = async (email: string, passwordRaw: string) => {
   */
 };
 
+export const refreshSession = async (oldRefreshToken: string) => {
+  // Defines an async function that handles refreshing a user's session
+  // It receives the old refresh token sent from the client
+
+  // 1. Verify the token exists and isn't expired
+  const decoded = jwt.verify(oldRefreshToken, process.env.JWT_REFRESH_SECRET!) as any;
+  /*
+  Verifies and decodes the refresh token using JWT secret.
+
+  If token is:
+  - expired ❌
+  - tampered ❌
+
+  It will throw an error.
+
+  If valid:
+  - returns payload (userId, familyId, etc.)
+  */
+
+  
+  // 2. Look up the token in our DB
+  const tokenRes = await query(
+    'SELECT * FROM refresh_tokens WHERE user_id = $1 AND family_id = $2 AND is_revoked = FALSE',
+    [decoded.userId, decoded.familyId]
+  );
+  /*
+  Queries database to find active refresh token record:
+
+  - user_id must match decoded userId
+  - family_id ensures we are in same login session group
+  - is_revoked = FALSE ensures token is still valid
+
+  This is part of token rotation security system
+  */
+
+  
+  const storedToken = tokenRes.rows[0];
+  /*
+  Gets the first matching token record from DB
+  If none found → storedToken will be undefined
+  */
+
+
+  // 3. SECURITY CHECK: Reuse Detection
+  // If we can't find the token, or the hash doesn't match the latest one in the family,
+  // someone might be trying to reuse an old token.
+
+  const isMatch = storedToken
+    ? await bcrypt.compare(oldRefreshToken, storedToken.token_hash)
+    : false;
+  /*
+  Compares incoming refresh token with hashed version in DB.
+
+  Why this matters:
+  - Prevents token theft reuse
+  - Ensures only latest token in family is valid
+  */
+
+
+  if (!storedToken || !isMatch) {
+    // CRITICAL: Potential theft detected. Revoke the entire family!
+    await query(
+      'UPDATE refresh_tokens SET is_revoked = TRUE WHERE family_id = $1',
+      [decoded.familyId]
+    );
+    /*
+    If something is wrong:
+    - token not found OR
+    - token mismatch
+
+    Then:
+    👉 assume token theft
+    👉 revoke ALL tokens in that family
+    */
+
+    throw new Error("Security breach detected. Please login again.");
+    /*
+    Forces user to re-login completely
+    */
+  }
+
+
+  // 4. Everything is fine. Generate NEW pair
+  const newAccessToken = generateAccessToken(decoded.userId, storedToken.role);
+  /*
+  Creates a new short-lived access token (e.g. 15 mins)
+  Used for API authentication
+  */
+
+
+  const newRefreshToken = generateRefreshToken(decoded.userId, decoded.familyId);
+  /*
+  Creates a new refresh token but keeps same familyId
+  This is called "token rotation"
+  */
+
+
+  const newHash = await bcrypt.hash(newRefreshToken, 10);
+  /*
+  Hashes the new refresh token before storing it in DB
+  */
+
+
+  // 5. Update the DB with the new token hash
+  await query(
+    'UPDATE refresh_tokens SET token_hash = $1 WHERE id = $2',
+    [newHash, storedToken.id]
+  );
+  /*
+  Updates database with new refresh token hash
+  Old refresh token is now invalid
+  */
+
+
+  return { newAccessToken, newRefreshToken };
+  
+};

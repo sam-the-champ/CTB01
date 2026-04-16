@@ -11,6 +11,8 @@ This is the function that handles user registration logic.
 */
 import { login } from '../controllers/auth.controller';
 
+import { refresh } from '../controllers/auth.controller';
+
 
 const router = Router();
 /*
@@ -33,7 +35,8 @@ So when frontend sends:
 POST /register
 → this function runs
 */
-router.post('/login', login)
+router.post('/login', login);
+router.post('/refresh', refresh);
 
 
 export default router;
