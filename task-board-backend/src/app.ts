@@ -19,7 +19,7 @@ const app: Application = express();
 
 app.use(helmet()); // Adds security headers automatically (protects from XSS, clickjacking, etc.)
 app.use(cors({
-    origin: "*", 
+    origin: process.env.FRONTEND_URL, 
     credentials: true // Allows cookies (like refresh tokens) to be sent between frontend and backend
 }));
 
