@@ -33,11 +33,11 @@ app.use(express.json());
 app.use(cookieParser()); 
 
 app.use('/api/auth', authRoutes);
-app.use('./api/users', userRoutes);
-app.use('./api/tasks', taskRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/tasks', taskRoutes);
 
 
-app.use('*', (req, res) => {
+app.use((req, res) => {
     res.status(404).json({ error: "Endpoint not found"});
 });
 
